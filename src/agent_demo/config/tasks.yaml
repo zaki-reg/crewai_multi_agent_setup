@@ -1,0 +1,76 @@
+reddit_search_task:
+  description: >
+    Search Reddit for discussions and recommendations of small, new, or emerging AI coding YouTubers.
+    Focus on finding mentions of channels through relevant subreddits (e.g., r/MachineLearning, r/learnprogramming, r/ArtificialIntelligence, r/coding, r/datascience, r/Python, r/programming, r/ml).
+
+    Search terms to use, always prefixed with "site:reddit.com":
+    - "site:reddit.com small content creator coding"
+    - "site:reddit.com new channels on ai agents"
+    - "site:reddit.com underrated AI coding YouTube"
+    - "site:reddit.com hidden gem programming YouTube"
+    - "site:reddit.com emerging AI coding channels"
+    - "site:reddit.com beginner friendly AI YouTube few subscribers"
+    - "site:reddit.com AI machine learning tutorials new creators"
+    - "site:reddit.com best small AI programming channels"
+    - "site:reddit.com up-and-coming AI coding YouTube"
+
+    Look for search results (titles and snippets) that strongly suggest discussions about recommendations for smaller, newer, or underrated AI/coding YouTube channels.
+    Prioritize links that seem to be actual discussion threads or comment sections where users might recommend specific channels.
+    **Output a JSON array of URLs that are highly likely to contain relevant channel recommendations.**
+  expected_output: >
+    A JSON array of strings, where each string is a Reddit URL.
+    Example:
+    ```json
+    [
+      "https://www.reddit.com/r/learnprogramming/comments/123abc/underrated_ai_channels/",
+      "https://www.reddit.com/r/MachineLearning/comments/456def/new_ml_youtube_creators/",
+      "https://www.reddit.com/r/coding/comments/789ghi/hidden_gems_for_python_ai_tutorials/"
+    ]
+    ```
+    If no relevant Reddit URLs are found, output an empty JSON array: `[]`
+  agent: reddit_searcher
+
+extraction_task:
+  description: >
+    Visit each Reddit URL provided by the 'reddit_search_task'.
+    Carefully read the content of each Reddit thread and its comments.
+    Identify any mentions of specific AI/coding YouTube channel names and, if provided, their URLs.
+    Prioritize mentions that describe the channel as "small", "new", "underrated", "hidden gem", "deserves more subscribers", "emerging", "just starting out", "not many views but great content", "up-and-coming", or "few followers/subscribers".
+    For each identified YouTube channel, extract its name and its URL. If only a channel name is found, attempt to infer the YouTube URL (e.g., "Channel Name" -> "https://www.youtube.com/@ChannelName" or "https://www.youtube.com/channel/CHANNEL_ID").
+    Compile all found channels into a structured JSON array.
+  expected_output: >
+    A JSON array of dictionaries, where each dictionary represents an identified YouTube channel.
+    Each dictionary *must* have "Channel Name" and "Channel URL".
+    Example of output if channels are found:
+    ```json
+    [
+      {
+        "Channel Name": "AI Bytes",
+        "Channel URL": "https://www.youtube.com/@AIBytes"
+      },
+      {
+        "Channel Name": "Code Whisperer AI",
+        "Channel URL": "https://www.youtube.com/channel/UCXYZ123ABC"
+      }
+    ]
+    ```
+    If no YouTube channels are found after browsing all Reddit links, output an empty JSON array: `[]`
+  agent: content_extractor
+
+reporting_task:
+  description: >
+    Process the structured JSON output (a JSON array of channel information) from the 'extraction_task'.
+    If the extraction output is an empty array `[]`, generate a specific message indicating that no channels were found.
+    For each channel dictionary in the array, format the output as a simple markdown list item: "- Channel Name: [Channel URL]".
+    Do not add any additional descriptions, profiles, or explanations beyond what is specified for each channel entry.
+  expected_output: >
+    A clean, simple markdown list showing only channel names and their corresponding YouTube URLs.
+    If the input from the extraction_task is an empty JSON array, the output *must* be:
+    "No small, new, or underrated AI coding YouTube channels were found after searching and browsing Reddit discussions."
+    Otherwise, format the list as:
+    ```markdown
+    - Channel Name 1: [URL 1]
+    - Channel Name 2: [URL 2]
+    ...
+    ```
+  agent: reporting_analyst
